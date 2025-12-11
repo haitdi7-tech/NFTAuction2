@@ -80,7 +80,7 @@ contract NFTAuction is Initializable, UUPSUpgradeable {
         NextAuctionId++;
     }
 
-    function plaseBid(
+    function placeBid(
         uint256 auctionId,
         uint256 amount,
         address _bidAddress
@@ -106,33 +106,23 @@ contract NFTAuction is Initializable, UUPSUpgradeable {
             pauValue = amount * price / 1e18;
             
         }
-        console.log("eth2usd :", uint256(eth2usd));
-        console.log("usdc2usd:",uint256(usdc2usd));
+        
         uint256 startPrice = auction.startingBid * uint256(getLatestPrice(_bidAddress)) / 1e18;
         uint256 highestBid = auction.highestBid * uint256(getLatestPrice(_bidAddress)) / 1e18;
-
-        //console.log("eth2usd:",eth2usd);
-        console.log("_bidAddress:",_bidAddress);
-        console.log("startPrice:",startPrice);
-        console.log("highestBid:",highestBid);
-        console.log("pauValue:",pauValue);
+        console.log("highestBid",highestBid);
+        console.log("pauValue",pauValue);
         require(
             pauValue >= startPrice && pauValue > highestBid,
             "Bid amount is too low"
         );
         //转移ERC20代币
         if (_bidAddress != address(0)) {
-            console.log("IERC20(balanceOf)",IERC20(_bidAddress).balanceOf(msg.sender));
-            console.log("transferbalanceOf",IERC20(_bidAddress).balanceOf(address(this)));
-            console.log("amount",amount);
+           
             require(IERC20(_bidAddress).transferFrom(msg.sender, address(this), amount), "ERC20 transfer failed");
-            console.log("IERC20(balanceOf)22",IERC20(_bidAddress).balanceOf(msg.sender));
-            console.log("address(this)22",address(this));
-            console.log("transferbalanceOf22",IERC20(_bidAddress).balanceOf(address(this)));
-            console.log("amount22",amount);
+           
         }
         //退还之前的最高出价者
-        console.log("highestBidderamount22",auction.highestBidder);
+        
         if (auction.highestBidder != address(0)) {
             //转移ERC20代币
             if (auction.assetAddress != address(0)) {
@@ -172,22 +162,17 @@ contract NFTAuction is Initializable, UUPSUpgradeable {
             //  require(success, " transfer fail");
             //将最高出价转移给卖家
             if (auction.assetAddress != address(0)) {
-                 console.log("IERC20(_bidAddress)",IERC20(auction.assetAddress).balanceOf(msg.sender));
-                console.log("transfer",IERC20(auction.assetAddress).balanceOf(auction.seller));
-                console.log("sender",msg.sender);
-                console.log("address(this)",address(this));
-                 console.log("balanceOfaddress(this)",IERC20(auction.assetAddress).balanceOf(address(this)));
                 require(IERC20(auction.assetAddress).transfer(auction.seller, auction.highestBid), "ERC20 transfer failed");
             } else {
                 payable(auction.seller).transfer(auction.highestBid);
             }
         } else {
             //如果没有出价，NFT归还给卖家
-            // IERC721(auction.nftAddress).transferFrom(
-            //     address(this),
-            //     auction.seller,
-            //     auction.tokenId
-            // );
+            IERC721(auction.nftAddress).transferFrom(
+                address(this),
+                auction.seller,
+                auction.tokenId
+            );
         }
     }
 

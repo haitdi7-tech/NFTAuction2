@@ -3,7 +3,7 @@ const {expect} = require("chai");
 
 describe("Auction Test", () => {
     it("Create ", async() => {
-        const [signer, buyer] = await ethers.getSigners()
+        const [signer, buyer,buyer2] = await ethers.getSigners()
         // 1 一键部署拍卖合约
         await deployments.fixture(["NFTAuction"]);
         //返回合约地址
@@ -20,10 +20,12 @@ describe("Auction Test", () => {
         // 铸造NFT
         await nft.mint(signer.address, 1);
         console.log("NFT minted to:", signer.address);
+        expect(await nft.balanceOf(signer.address)).to.equal(1);
+        expect(await nft.ownerOf(1)).to.equal(signer.address);
 
         //授权给拍卖合约
         //await nft.approve(nftAuctionDeployment.address, tokenId);
-        nft.setApprovalForAll(nftAuctionDeployment.address, true);
+        await nft.setApprovalForAll(nftAuctionDeployment.address, true);
         console.log("NFT approved to Auction contract");
 
         //3 部署USDC合约
@@ -52,7 +54,7 @@ describe("Auction Test", () => {
         const priceFeedUSDCDepoly = await aggreagatorV3.deploy(8,100);
         const priceFeedUsdc = await priceFeedUSDCDepoly.waitForDeployment();
         const priceFeedUsdcAddress = await priceFeedUsdc.getAddress();
-        console.log("usdcFeed:",priceFeedEthAddress);
+        console.log("usdcFeed:",priceFeedUsdcAddress);
         
         
         const token2Usd = [{
@@ -80,7 +82,8 @@ describe("Auction Test", () => {
             tokenId, // Token ID        
         );
         console.log("Auction created");
-
+        // 验证NFT已转移到拍卖合约
+        expect(await nft.ownerOf(1)).to.equal(await nftAuction.getAddress());
         const auction = await nftAuction.auctions(0);
         console.log("Auction details:", auction);
 
@@ -96,11 +99,11 @@ describe("Auction Test", () => {
         // const hello = await nftAuctionV2.hello();
         // console.log("Hello from V2:", hello);
         //购买者出价 eth参加
-        await nftAuctionV2.connect(buyer).plaseBid(0, 0,ethers.ZeroAddress,{ value: ethers.parseEther("2.1") });
-        console.log("Bid placed by buyer:", buyer.address);
+        await nftAuctionV2.connect(buyer2).placeBid(0, 0,ethers.ZeroAddress,{ value: ethers.parseEther("2.1") });
+        console.log("Bid placed by buyer2:", buyer2.address);
         
         //买家出价
-        await nftAuctionV2.connect(buyer).plaseBid(0, ethers.parseEther("2.11"),ERC20Address);
+        await nftAuctionV2.connect(buyer).placeBid(0, ethers.parseEther("2.11"),ERC20Address);
         console.log("Bid placed by buyer with ERC20 tokens:", buyer.address);
 
         //等待拍卖结束
